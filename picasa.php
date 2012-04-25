@@ -37,6 +37,34 @@ function auth($user, $pass) {
     return $authHeader;
 }
 
+function getAlbumIDs($rawXML) {
+    if(!function_exists('parseEntry')) {
+        function parseEntry($child) {
+            $fields = explode('/', (string)$child->id);
+            return array((string)$child->title, $fields[count($fields)-1]);
+        }
+    }
+
+    $xml = new SimpleXMLElement($rawXML);
+
+    $albums = array();
+    if($xml->getName() == 'entry') {
+        //We have a single entry element (like the return from createAlbum)
+        list($title, $id) = parseEntry($xml);
+        $albums[$title] = $id;
+    }else {
+        //We have an unknown number of albums (like the return from albumList
+        foreach($xml->children() as $child) {
+            if($child->getName() == 'entry') {
+                list($title, $id) = parseEntry($child);
+                $albums[$title] = $id;
+            }
+        }
+    }
+
+    return $albums;
+}
+
 function createAlbum($opts) {
     $rawXml = "<entry xmlns='http://www.w3.org/2005/Atom'
                     xmlns:media='http://search.yahoo.com/mrss/'
@@ -58,7 +86,7 @@ function createAlbum($opts) {
                 CURLOPT_SSL_VERIFYPEER=> false,
                 CURLOPT_POST=> true,
                 CURLOPT_RETURNTRANSFER=> true,
-                CURLOPT_HEADER=> true,
+                CURLOPT_HEADER=> false,
                 CURLOPT_FOLLOWLOCATION=> true,
                 CURLOPT_POSTFIELDS=> $rawXml,
                 CURLOPT_HTTPHEADER=> array('GData-Version:  2', $opts['auth-header'], 'Content-Type:  application/atom+xml')
@@ -73,6 +101,8 @@ function createAlbum($opts) {
 
     //header('Content-type: text/xml');
     //echo file_get_contents($feedUrl);
+
+    return getAlbumIDs($ret);
 }
 
 function albumList($opts) {
@@ -94,18 +124,8 @@ function albumList($opts) {
 
     //header('Content-type: text/plain');
     //echo $ret;
-
-    $xml = new SimpleXMLElement($ret);
-
-    $albums = array();
-    foreach($xml->children() as $child) {
-        if($child->getName() == 'entry') {
-            $fields = explode('/', (string)$child->id);
-            $albums[(string)$child->title] = $fields[count($fields)-1];
-        }
-    }
-
-    return $albums;
+    
+    return getAlbumIDs($ret);
 }
 
 function uploadImage($opts) {
@@ -233,7 +253,7 @@ if(isset($args['create-album'])) {
     $args['album-desc'] = !isset($args['album-desc']) ? '' : $args['album-desc'];
     $args['album-location'] = !isset($args['album-location']) ? '' : $args['album-location'];
 
-    createAlbum(array(
+    $albumIDs = createAlbum(array(
         'auth-header'=> $authHeader,
         'feed-url'=> $feedUrl,
         'album-title'=> $args['create-album'],
@@ -241,6 +261,18 @@ if(isset($args['create-album'])) {
         'album-location'=> $args['album-location'],
         'album-access'=> $args['album-access']
     ));
+
+    print_r($albumIDs);
+}
+
+if(isset($args['upload-image'])) {
+    $files = glob($args['upload-image']);
+    print_r($files);
+    /*uploadImage(array(
+        'auth-header'=> $authHeader,
+        'album-id'=> $albums['My Test Album'],
+        'image'=> '/home/mark/websites/tmp.janustech.net/htdocs/picasa/cute_baby_kitten.jpg',
+    ));*/
 }
 
 /*
