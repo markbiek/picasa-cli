@@ -282,18 +282,23 @@ if(isset($args['create-album'])) {
 }
 
 if(isset($args['upload-image'])) {
-    if(count($albumIDs) == 0 ) {
-        die("Please specify an album to upload to.");
-    }
-    if(count($albumIDs) > 1 ) {
-        die("Please specify only one album to upload to.");
+    if(isset($args['upload-album'])) {
+        $albumID = albumIDByName($args['upload-album']);
+    }else {
+        if(count($albumIDs) == 0 ) {
+            die("Please specify an album to upload to.");
+        }
+        if(count($albumIDs) > 1 ) {
+            die("Please specify only one album to upload to.");
+        }
+        $albumID = reset($albumIDs);
     }
 
     $files = glob($args['upload-image']);
     foreach($files as $file) {
         uploadImage(array(
             'auth-header'=> AUTH_HEADER,
-            'album-id'=> reset($albumIDs),
+            'album-id'=> $albumID,
             'image'=> $file
         ));
     }
