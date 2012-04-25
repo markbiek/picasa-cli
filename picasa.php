@@ -303,30 +303,4 @@ if(isset($args['upload-image'])) {
         ));
     }
 }
-
-/*
-$albums = albumList(array(
-            'auth-header'=> AUTH_HEADER,
-            'feed-url'=> FEED_URL,
-        ));
-print_r($albums);
- */
-
-/*
-uploadImage(array(
-    'auth-header'=> AUTH_HEADER,
-    'album-id'=> albumIDByName('foo6'),
-    'image'=> '/home/mark/websites/tmp.janustech.net/htdocs/picasa/cute_baby_kitten.jpg',
-));
- */
-
-/*
-createAlbum(array(
-    'auth-header'=> AUTH_HEADER,
-    'feed-url'=> FEED_URL,
-    'album-title'=> 'My Test Album',
-    'album-desc'=> 'This is my test album',
-    'album-access'=> 'public'
-));
- */
 ?>
