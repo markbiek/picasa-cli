@@ -100,12 +100,19 @@ function createAlbum($opts) {
     //echo $ret;
 
     //header('Content-type: text/xml');
-    //echo file_get_contents($feedUrl);
+    //echo file_get_contents(FEED_URL);
 
     return getAlbumIDs($ret);
 }
 
-function albumList($opts) {
+function albumList($opts = '') {
+    if(!is_array($opts)) {
+        $opts = array(
+            'auth-header'=> AUTH_HEADER,
+            'feed-url'=> FEED_URL,
+        );
+    }
+
     $ch = curl_init();  
     curl_setopt($ch, CURLOPT_URL, $opts['feed-url']);  
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);  
@@ -128,6 +135,18 @@ function albumList($opts) {
     return getAlbumIDs($ret);
 }
 
+function albumIDByName($find, $albums = '') {
+    if(!is_array($albums)) {
+        $albums = albumList();
+    } 
+
+    foreach($albums as $name=>$id) {
+        if($find == $name) {
+            return $id;
+        }
+    }
+}
+
 function uploadImage($opts) {
     if(!isset($opts['image-title'])) {
         $opts['image-title'] = $opts['image'];
@@ -135,8 +154,6 @@ function uploadImage($opts) {
     if(!isset($opts['image-desc'])) {
         $opts['image-desc'] = '';
     }
-
-    print_r($opts);
 
     $rawImgXml = '<entry xmlns="http://www.w3.org/2005/Atom">
                   <title>' . $opts['image-title'] . '</title>
@@ -164,7 +181,7 @@ function uploadImage($opts) {
     $header = array('GData-Version:  2', $opts['auth-header'], 'Content-Type: multipart/related; boundary=P4CpLdIHZpYqNn7;', 'Content-Length: ' . strlen($data), 'MIME-version: 1.0');
 
     //This works for uploading an image WITHOUT metadata
-    /*$header = array('GData-Version:  2', $authHeader, 'Content-Type: image/jpeg', 'Content-Length: ' . $fileSize, 'Slug: cute_baby_kitten.jpg');
+    /*$header = array('GData-Version:  2', AUTH_HEADER, 'Content-Type: image/jpeg', 'Content-Length: ' . $fileSize, 'Slug: cute_baby_kitten.jpg');
     $data = $imgData;*/
 
     $ret = "";
@@ -245,8 +262,8 @@ if(isset($args['help']) || count($args) <= 0) {
 }
 
 $config = loadConfig();
-$feedUrl = "https://picasaweb.google.com/data/feed/api/user/default"; //"default" uses the userId of the authenticating user
-$authHeader = auth($config['username'], $config['password']);
+define('FEED_URL', "https://picasaweb.google.com/data/feed/api/user/default"); //"default" uses the userId of the authenticating user
+define('AUTH_HEADER', auth($config['username'], $config['password']));
 
 if(isset($args['create-album'])) {
     $args['album-access'] = !isset($args['album-access']) ? '' : $args['album-access'];
@@ -254,47 +271,47 @@ if(isset($args['create-album'])) {
     $args['album-location'] = !isset($args['album-location']) ? '' : $args['album-location'];
 
     $albumIDs = createAlbum(array(
-        'auth-header'=> $authHeader,
-        'feed-url'=> $feedUrl,
+        'auth-header'=> AUTH_HEADER,
+        'feed-url'=> FEED_URL,
         'album-title'=> $args['create-album'],
         'album-desc'=> $args['album-desc'],
         'album-location'=> $args['album-location'],
         'album-access'=> $args['album-access']
     ));
-
-    print_r($albumIDs);
 }
 
 if(isset($args['upload-image'])) {
     $files = glob($args['upload-image']);
     print_r($files);
     /*uploadImage(array(
-        'auth-header'=> $authHeader,
+        'auth-header'=> AUTH_HEADER,
         'album-id'=> $albums['My Test Album'],
         'image'=> '/home/mark/websites/tmp.janustech.net/htdocs/picasa/cute_baby_kitten.jpg',
     ));*/
 }
 
+print albumIDByName('foo6');
+
 /*
 $albums = albumList(array(
-            'auth-header'=> $authHeader,
-            'feed-url'=> $feedUrl,
+            'auth-header'=> AUTH_HEADER,
+            'feed-url'=> FEED_URL,
         ));
 print_r($albums);
  */
 
 /*
 uploadImage(array(
-    'auth-header'=> $authHeader,
-    'album-id'=> $albums['My Test Album'],
+    'auth-header'=> AUTH_HEADER,
+    'album-id'=> albumIDByName('foo6'),
     'image'=> '/home/mark/websites/tmp.janustech.net/htdocs/picasa/cute_baby_kitten.jpg',
 ));
-*/
+ */
 
 /*
 createAlbum(array(
-    'auth-header'=> $authHeader,
-    'feed-url'=> $feedUrl,
+    'auth-header'=> AUTH_HEADER,
+    'feed-url'=> FEED_URL,
     'album-title'=> 'My Test Album',
     'album-desc'=> 'This is my test album',
     'album-access'=> 'public'
