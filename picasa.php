@@ -54,8 +54,6 @@ function createAlbum($opts) {
     curl_setopt($ch, CURLOPT_URL, $opts['feed-url']);  
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);  
 
-    $data = array($xml);
-
     $options = array(
                 CURLOPT_SSL_VERIFYPEER=> false,
                 CURLOPT_POST=> true,
@@ -70,8 +68,8 @@ function createAlbum($opts) {
     $ret = curl_exec($ch);
     curl_close($ch);
 
-    header('Content-type: text/plain');
-    echo $ret;
+    //header('Content-type: text/plain');
+    //echo $ret;
 
     //header('Content-type: text/xml');
     //echo file_get_contents($feedUrl);
@@ -166,7 +164,7 @@ function uploadImage($opts) {
     curl_close($ch);
 
     //header('Content-type: text/plain');
-    echo "\n\nret=$ret\n\n";
+    //echo "\n\nret=$ret\n\n";
 
     //echo "\n\n" . print_r($header,true);
     //echo "\n\n@\n$data";
@@ -207,8 +205,9 @@ Usage: picasa.php [OPTION]
 
 Options
  --create-album=ALBUM-NAME      Creates a new Picasa album
- --album-desc=DESC              The description for a new album
- --private-album                Sets a newly created album to private. (Default visibility is public)
+ --album-desc=DESC              The description for a new album (Optional)
+ --album-location=LOCATION      The location of the option (Optional)
+ --private-album                Sets a newly created album to private. (Optional. Default visibility is public)
  --upload-image=FILE(s)         Uploads a file or files to the specified album. 
                                 If --create-album is specified, photos are uploaded to the new album
 
@@ -220,13 +219,29 @@ EOD;
 
 $args = getArgs();
 
-if(isset($args['help'])) {
+if(isset($args['help']) || count($args) <= 0) {
     printHelp();
+    die();
 }
 
 $config = loadConfig();
 $feedUrl = "https://picasaweb.google.com/data/feed/api/user/default"; //"default" uses the userId of the authenticating user
-//$authHeader = auth($config['username'], $config['password']);
+$authHeader = auth($config['username'], $config['password']);
+
+if(isset($args['create-album'])) {
+    $args['album-access'] = !isset($args['album-access']) ? '' : $args['album-access'];
+    $args['album-desc'] = !isset($args['album-desc']) ? '' : $args['album-desc'];
+    $args['album-location'] = !isset($args['album-location']) ? '' : $args['album-location'];
+
+    createAlbum(array(
+        'auth-header'=> $authHeader,
+        'feed-url'=> $feedUrl,
+        'album-title'=> $args['create-album'],
+        'album-desc'=> $args['album-desc'],
+        'album-location'=> $args['album-location'],
+        'album-access'=> $args['album-access']
+    ));
+}
 
 /*
 $albums = albumList(array(
