@@ -264,6 +264,7 @@ if(isset($args['help']) || count($args) <= 0) {
 $config = loadConfig();
 define('FEED_URL', "https://picasaweb.google.com/data/feed/api/user/default"); //"default" uses the userId of the authenticating user
 define('AUTH_HEADER', auth($config['username'], $config['password']));
+$albumIDs = array();
 
 if(isset($args['create-album'])) {
     $args['album-access'] = !isset($args['album-access']) ? '' : $args['album-access'];
@@ -281,16 +282,22 @@ if(isset($args['create-album'])) {
 }
 
 if(isset($args['upload-image'])) {
-    $files = glob($args['upload-image']);
-    print_r($files);
-    /*uploadImage(array(
-        'auth-header'=> AUTH_HEADER,
-        'album-id'=> $albums['My Test Album'],
-        'image'=> '/home/mark/websites/tmp.janustech.net/htdocs/picasa/cute_baby_kitten.jpg',
-    ));*/
-}
+    if(count($albumIDs) == 0 ) {
+        die("Please specify an album to upload to.");
+    }
+    if(count($albumIDs) > 1 ) {
+        die("Please specify only one album to upload to.");
+    }
 
-print albumIDByName('foo6');
+    $files = glob($args['upload-image']);
+    foreach($files as $file) {
+        uploadImage(array(
+            'auth-header'=> AUTH_HEADER,
+            'album-id'=> reset($albumIDs),
+            'image'=> $file
+        ));
+    }
+}
 
 /*
 $albums = albumList(array(
