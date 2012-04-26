@@ -68,8 +68,8 @@ function replaceEmptyWithSpace(&$arr, $key) {
 }
 
 function createAlbum($opts) {
-    if(!isset($args['album-access'])) {
-        $args['album-access'] = 'public';
+    if(!isset($opts['album-access'])) {
+        $opts['album-access'] = 'public';
     }
     replaceEmptyWithSpace($opts, 'album-desc');
     replaceEmptyWithSpace($opts, 'album-location');
