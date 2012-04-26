@@ -206,8 +206,14 @@ function uploadImage($opts) {
 }
 
 function loadConfig($file='.picasa.conf') {
+    //First look for the file in the default location
+    //(A user specified location or the current directory)
     if(!file_exists($file)) {
-        die("The config file $file could not be found.");
+        $pwuid = posix_getpwuid(getmyuid());
+        //If we can't find it, check the user's home directory
+        if(!file_exists($pwuid['dir'] . '/' . $file)) {
+            die("The config file $file could not be found.\n");
+        }
     }
 
     $config = array();
