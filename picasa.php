@@ -30,8 +30,6 @@ function auth($user, $pass) {
         }
     }
 
-    //echo '<pre>' . print_r($gvals,true) . '</pre>';
-
     $authHeader = 'Authorization:  GoogleLogin auth="' . $gvals['Auth'] . '"';
 
     return $authHeader;
@@ -207,7 +205,11 @@ function uploadImage($opts) {
     //echo "\n\n@\n$data";
 }
 
-function loadConfig($file='picasa.conf') {
+function loadConfig($file='.picasa.conf') {
+    if(!file_exists($file)) {
+        die("The config file $file could not be found.");
+    }
+
     $config = array();
     $rawConfig = file_get_contents($file);
     $lines = explode("\n", $rawConfig);
@@ -247,12 +249,15 @@ Options
  --private-album                Sets a newly created album to private. (Optional. Default visibility is public)
  --upload-image=FILE(s)         Uploads a file or files to the specified album. 
                                 If --create-album is specified, photos are uploaded to the new album
-
  --upload-album=ALBUM-NAME      The name of the album to upload images to
+ --username=USERNAME            The username to authenticate as. (Can also be placed in .picasa.conf)
+ --password=PASSWORD            The password to authenticate with. (Can also be placed in .picasa.conf)
 EOD;
 
     print $helpText . "\n";
 }
+
+/************************************************************/
 
 $args = getArgs();
 
@@ -265,6 +270,13 @@ $config = loadConfig();
 define('FEED_URL', "https://picasaweb.google.com/data/feed/api/user/default"); //"default" uses the userId of the authenticating user
 define('AUTH_HEADER', auth($config['username'], $config['password']));
 $albumIDs = array();
+
+if(isset($args['username'])) {
+    $config['username'] = $args['username'];
+}
+if(isset($args['password'])) {
+    $config['password'] = $args['password'];
+}
 
 if(isset($args['create-album'])) {
     $args['album-access'] = !isset($args['album-access']) ? '' : $args['album-access'];
