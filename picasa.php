@@ -63,7 +63,17 @@ function getAlbumIDs($rawXML) {
     return $albums;
 }
 
+function replaceEmptyWithSpace(&$arr, $key) {
+    $arr[$key] = isset($arr[$key]) ? $arr[$key] : '';
+}
+
 function createAlbum($opts) {
+    if(!isset($args['album-access'])) {
+        $args['album-access'] = 'public';
+    }
+    replaceEmptyWithSpace($opts, 'album-desc');
+    replaceEmptyWithSpace($opts, 'album-location');
+
     $rawXml = "<entry xmlns='http://www.w3.org/2005/Atom'
                     xmlns:media='http://search.yahoo.com/mrss/'
                     xmlns:gphoto='http://schemas.google.com/photos/2007'>
@@ -205,6 +215,42 @@ function uploadImage($opts) {
     //echo "\n\n@\n$data";
 }
 
+function syncPath($path) {
+    $files = array();
+    $dir = array();
+
+    $h = opendir($path);
+    while( ($e = readdir($h)) !== false ) {
+        if($e != '.' && $e != '..') {
+            if(is_dir("$path/$e")) {
+                syncPath("$path/$e");
+            }else {
+                if( in_array(strtolower(pathinfo($e, PATHINFO_EXTENSION)),array('jpg','jpeg','gif','tiff','png')) ) {
+                    $files[] = trim($e, '/');
+                }
+            }
+        }
+    }
+    closedir($h);
+
+    $key = trim(str_replace('--', '-', str_replace('/', '-', str_replace('.', '', $path))), '-');
+    $dir[$key] = array('path'=>trim($path, '/'), 'files'=>$files);
+
+    foreach($dir as $key=>$data) {
+        print "Creating album $key\n";
+        createAlbum(array(
+            'auth-header'=> AUTH_HEADER,
+            'feed-url'=> FEED_URL,
+            'album-title'=> $key,
+        ));
+        foreach($data['files'] as $img) {
+            $fullPath = str_replace('//', '/', $data['path'] . '/' . $img);
+            print "Uploading image $fullPath\n";
+        }
+        print "\n";
+    }
+}
+
 function loadConfig($file='.picasa.conf') {
     //First look for the file in the default location
     //(A user specified location or the current directory)
@@ -255,7 +301,8 @@ Options
  --private-album                Sets a newly created album to private. (Optional. Default visibility is public)
  --upload-image=FILE(s)         Uploads a file or files to the specified album. 
                                 If --create-album is specified, photos are uploaded to the new album
- --upload-album=ALBUM-NAME      The name of the album to upload images to
+ --upload-album=ALBUM-NAME      The name of the album where uploaded images are placed 
+ --sync=DIR                     Given a path, upload all images, creating albums for each directory. (Not a true "sync")
  --username=USERNAME            The username to authenticate as. (Can also be placed in .picasa.conf)
  --password=PASSWORD            The password to authenticate with. (Can also be placed in .picasa.conf)
 EOD;
@@ -282,6 +329,11 @@ if(isset($args['username'])) {
 }
 if(isset($args['password'])) {
     $config['password'] = $args['password'];
+}
+
+if(isset($args['sync'])) {
+    syncPath($args['sync']);
+    die(); //Don't allow any other operations after this
 }
 
 if(isset($args['create-album'])) {
