@@ -156,6 +156,8 @@ function albumIDByName($find, $albums = '') {
 }
 
 function uploadImage($opts) {
+    file_exists($opts['image']) || die("Could not locate file {$opts['image']}\n");
+
     if(!isset($opts['image-title'])) {
         $opts['image-title'] = $opts['image'];
     }
@@ -237,7 +239,6 @@ function syncPath($path) {
     $dir[$key] = array('path'=>trim($path, '/'), 'files'=>$files);
 
     foreach($dir as $key=>$data) {
-        print "Creating album $key\n";
         createAlbum(array(
             'auth-header'=> AUTH_HEADER,
             'feed-url'=> FEED_URL,
@@ -245,9 +246,12 @@ function syncPath($path) {
         ));
         foreach($data['files'] as $img) {
             $fullPath = str_replace('//', '/', $data['path'] . '/' . $img);
-            print "Uploading image $fullPath\n";
+            uploadImage(array(
+                'auth-header'=> AUTH_HEADER,
+                'album-id'=> albumIDByName($key),
+                'image'=> $fullPath
+            ));
         }
-        print "\n";
     }
 }
 
